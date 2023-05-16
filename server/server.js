@@ -23,7 +23,7 @@ const clients = new Set();
 
 const { readFile , writeFile} = require("fs");
 const { join } = require("path");
-const { login, addUser, deleteUser, changeUsername, changePassword  } = require("./login");
+const { login, addUser, deleteUser, changeUsername, changePassword  } = require("./login.ts");
 
 let minecraft = {
     server: undefined,
@@ -487,9 +487,10 @@ wss.on('connection', async (ws) => {
                 writeFile(filePath, data.content, 'utf8', (err) => {
                     if (err) {
                         console.error(err);
-                        return;
+                        ws.send(JSON.stringify({type: 'saveConfig', success: false}));
                     }
                     console.log(`${data.game} config saved`);
+                    ws.send(JSON.stringify({type: 'saveConfig', success: true}));
                 });
                 break;
             case 'login':
@@ -505,6 +506,15 @@ wss.on('connection', async (ws) => {
                 break;
             case 'serverList':
                 sendServerList(ws);
+                break;
+            case 'change':
+                let result = false;
+                if (data.property === 'username') {
+                    result = await changeUsername(data.username, data.new, data.password);
+                } else {
+                    result = await changePassword(data.username, data.password, data.new);
+                }
+                ws.send(JSON.stringify({type: 'saveUser', success: result}));
                 break;
         }
     });
