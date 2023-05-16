@@ -1,8 +1,8 @@
 /**
  * server-side code
  */
-const { spawn } = require('child_process');
-const { exec } = require('child_process');
+const {spawn} = require('child_process');
+const {exec} = require('child_process');
 
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({port: 2911});
@@ -16,14 +16,14 @@ const os = require('os');
 const pty = require('node-pty');
 const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
-const { startBot } = require('../discord/discord.js');
-const { deploy } = require("../discord/deploy-commands");
+const {startBot} = require('../discord/discord.js');
+const {deploy} = require("../discord/deploy-commands");
 
 const clients = new Set();
 
-const { readFile , writeFile} = require("fs");
-const { join } = require("path");
-const { login, addUser, deleteUser, changeUsername, changePassword  } = require("./login.ts");
+const {readFile, writeFile} = require("fs");
+const {join} = require("path");
+const {login, addUser, deleteUser, changeUsername, changePassword, editUserRole} = require("./login.ts");
 
 let minecraft = {
     server: undefined,
@@ -120,7 +120,7 @@ function killServer(game) {
             case 'pz':
             case 'minecraft':
                 // Find the process ID of the Minecraft server
-                exec('tasklist | find "java.exe"', (error, stdout, stderr) => {
+                exec('tasklist | find "java.exe"', (error, stdout) => {
                     if (error) {
                         // console.error(`exec error: ${error}`);
                         console.error(`could not find any unknown ${game} servers`);
@@ -133,7 +133,7 @@ function killServer(game) {
                     const pid = stdout.trim().split(/\s+/)[1];
 
                     // Kill the process
-                    exec(`taskkill /F /PID ${pid}`, (error, stdout, stderr) => {
+                    exec(`taskkill /F /PID ${pid}`, (error) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
                             reject(error);
@@ -147,7 +147,7 @@ function killServer(game) {
             case 'valheim':
             case 'terraria':
                 // Find the process ID of the Minecraft server
-                exec(`tasklist | find "${game.charAt(0).toUpperCase() + game.slice(1)}Server.exe"`, (error, stdout, stderr) => {
+                exec(`tasklist | find "${game.charAt(0).toUpperCase() + game.slice(1)}Server.exe"`, (error, stdout) => {
                     if (error) {
                         // console.error(`exec error: ${error}`);
                         console.error(`could not find any unknown ${game} servers`);
@@ -160,7 +160,7 @@ function killServer(game) {
                     const pid = stdout.trim().split(/\s+/)[1];
 
                     // Kill the process
-                    exec(`taskkill /F /PID ${pid}`, (error, stdout, stderr) => {
+                    exec(`taskkill /F /PID ${pid}`, (error, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
                             reject(error);
@@ -225,7 +225,10 @@ async function startServer(ws, game, cmd, args, stop, online, offline) {
                 if (data.includes(offline))
                     updateStatus(ws, game, 'pinging');
                 // ws.send(JSON.stringify(`${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.toString().trim()}\n`));
-                sendAll({type: 'console', data:`${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.toString().trim()}\n`});
+                sendAll({
+                    type: 'console',
+                    data: `${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.toString().trim()}\n`
+                });
             }
         });
 
@@ -237,7 +240,10 @@ async function startServer(ws, game, cmd, args, stop, online, offline) {
 
         exports.servers[game].server.on('close', (code) => {
             console.log(`${game.charAt(0).toUpperCase() + game.slice(1)} server exited with code ${code}`);
-            sendAll({type: 'console', data: `${game.charAt(0).toUpperCase() + game.slice(1)} server exited with code ${code}`});
+            sendAll({
+                type: 'console',
+                data: `${game.charAt(0).toUpperCase() + game.slice(1)} server exited with code ${code}`
+            });
             updateStatus(ws, game, false);
         });
     }
@@ -260,13 +266,11 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
         console.log(`attempting to stop ${game} server`);
         try {
             exports.servers[game].server.write(stop);
-        }
-        catch (e) {
+        } catch (e) {
             console.log(`could not stop ${game} server safely; attempting to kill`);
             try {
                 exports.servers[game].server.kill();
-            }
-            catch (e) {
+            } catch (e) {
                 console.log(`could not kill ${game} server`);
             }
         }
@@ -304,13 +308,19 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
                     }
                 }
                 // ws.send(JSON.stringify(`${game === 'pz' ? 'PZ' : game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.trim()}\n`));
-                sendAll({type: 'console', data: `${game === 'pz' ? 'PZ' : game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.trim()}`});
+                sendAll({
+                    type: 'console',
+                    data: `${game === 'pz' ? 'PZ' : game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.trim()}`
+                });
             }
         });
 
         exports.servers[game].server.onExit((data) => {
             console.log(`${game.charAt(0).toUpperCase() + game.slice(1)} server exited with code ${data.exitCode}`);
-            sendAll({type: 'console', data: `${game.charAt(0).toUpperCase() + game.slice(1)} server exited with code ${data.exitCode}`});
+            sendAll({
+                type: 'console',
+                data: `${game.charAt(0).toUpperCase() + game.slice(1)} server exited with code ${data.exitCode}`
+            });
             updateStatus(ws, game, false);
         });
     }
@@ -403,20 +413,19 @@ wss.on('connection', async (ws) => {
         .then(user => {
             username = user;
         })
-        .catch(error => {
+        .catch(() => {
             username = '';
         });
 
     // const username = await getUsername(ws);
     if (username && username !== '') {
         console.log(`client ${username} connected`);
-    }
-    else {
+    } else {
         console.log('unknown client connected');
         // closeUnknownConnection(ws, secs);
     }
     clients.add({ws, username});
-    const client = getClient(ws);
+    // const client = getClient(ws);
 
     // send server list to client
     sendServerList(ws);
@@ -436,11 +445,11 @@ wss.on('connection', async (ws) => {
     // send cpu/memory stats
     const interval = setInterval(() => {
         cpu.usage().then((usage) => {
-            ws.send(JSON.stringify({ type: 'cpu', usage: usage.toFixed(2) }));
+            ws.send(JSON.stringify({type: 'cpu', usage: usage.toFixed(2)}));
         });
         memory.info().then((info) => {
             const usage = ((info.usedMemMb / info.totalMemMb) * 100).toFixed(2);
-            ws.send(JSON.stringify({ type: 'memory', usage: usage }));
+            ws.send(JSON.stringify({type: 'memory', usage: usage}));
         });
     }, 1000); // 1 second = 1 * 1000ms
 
@@ -501,11 +510,12 @@ wss.on('connection', async (ws) => {
                     await login(ws, data.username, data.password);
                 }
                 break;
-            case 'addUser':
-                await addUser(data.username, data.password);
-                break;
             case 'serverList':
                 sendServerList(ws);
+                break;
+            case 'addUser':
+                const addResult = await addUser(data.username, data.password, data.role);
+                ws.send(JSON.stringify({type: 'addUser', success: addResult}));
                 break;
             case 'change':
                 let result = false;
@@ -516,6 +526,14 @@ wss.on('connection', async (ws) => {
                 }
                 ws.send(JSON.stringify({type: 'saveUser', success: result}));
                 break;
+            case 'delUser':
+                const delResult = await deleteUser(data.username);
+                ws.send(JSON.stringify({type: 'delUser', success: delResult}));
+                break;
+            case 'editUser':
+                const editResult = await editUserRole(data.username, data.role);
+                ws.send(JSON.stringify({type: 'editUser', success: editResult}));
+                break;
         }
     });
 
@@ -524,8 +542,7 @@ wss.on('connection', async (ws) => {
         clients.delete(temp);
         if (username && username !== '') {
             console.log(`client ${username} disconnected`);
-        }
-        else {
+        } else {
             console.log('unknown client disconnected');
         }
         clearInterval(interval);

@@ -27,7 +27,7 @@ async function checkCredentials(username, password) {
     });
 
     // check if the username and password are correct
-    let result = await new Promise((resolve, reject) => {
+    let result = await new Promise((resolve) => {
         db.get('SELECT * FROM users WHERE username = ?', username, async function (err, row) {
             if (err) throw err;
             // @ts-ignore
@@ -55,9 +55,10 @@ async function checkCredentials(username, password) {
  *
  * @param username
  * @param password
+ * @param role
  * @returns {Promise<void>}
  */
-async function addUser(username, password = 'password') {
+async function addUser(username, password = 'password', role = 'user') {
     console.log(`creating user ${username}`)
     // Open the database
     const db = await new sqlite3.Database('server/users.db', (err) => {
@@ -69,15 +70,16 @@ async function addUser(username, password = 'password') {
 
     // create the users table if it doesn't exist
     await db.run(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
-        );
-    `);
+ CREATE TABLE IF NOT EXISTS users (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ username TEXT NOT NULL UNIQUE,
+ password TEXT NOT NULL,
+ role TEXT
+ );
+ `);
 
     // insert the new user into the database
-    await db.run('INSERT INTO users (username, password) VALUES (?, ?)', username, await hash(password), function (err) {
+    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', username, await hash(password), role, function (err) {
         if (err) throw err;
         console.log(`User '${username}' added to database.`);
     });
@@ -113,18 +115,21 @@ async function login(ws, username, password) {
         await db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, await hash(password)], (err, row) => {
             if (err) {
                 console.error(err.message);
-            }
-            else if (!row) {
+            } else if (!row) {
                 ws.send(JSON.stringify({type: 'login', success: false, error: 'Incorrect username or password'}));
-            }
-            else {
+            } else {
                 // User exists and password is correct
                 // @ts-ignore
-                ws.send(JSON.stringify({type: 'login', success: true, id: row.id, username: row.username}));
+                ws.send(JSON.stringify({
+                    type: 'login',
+                    success: true,
+                    id: row.id,
+                    username: row.username,
+                    role: row.role
+                }));
             }
         });
-    }
-    else {
+    } else {
         // Invalid input
         ws.send(JSON.stringify({type: 'login', success: false, error: 'Incorrect username or password'}));
     }
@@ -177,7 +182,6 @@ async function changeUsername(username, newUsername, password) {
     return result;
 }
 
-
 async function changePassword(username, oldPassword, newPassword) {
     if (!await checkCredentials(username, oldPassword)) {
         return false;
@@ -214,11 +218,11 @@ async function changePassword(username, oldPassword, newPassword) {
         }
         console.log('Closed the database connection.');
     });
-    console.log(result);
     return result;
 }
 
 async function deleteUser(username) {
+    let result;
     console.log(`deleting user ${username}`);
     // Open the database
     const db = await new sqlite3.Database('server/users.db', (err) => {
@@ -229,9 +233,12 @@ async function deleteUser(username) {
     });
 
     // delete the user from the database
-    await db.run('DELETE FROM users WHERE username = ?', username, function (err) {
-        if (err) throw err;
-        console.log(`User '${username}' deleted from database.`);
+    result = await new Promise(async (resolve, reject) => {
+        await db.run('DELETE FROM users WHERE username = ?', username, function (err) {
+            if (err) reject(err);
+            console.log(`User '${username}' deleted from database.`);
+            resolve(true);
+        });
     });
 
     // Close the database
@@ -241,6 +248,43 @@ async function deleteUser(username) {
         }
         console.log('Closed the database connection.');
     });
+    return result;
+}
+
+async function editUserRole(username, role) {
+    let result = false;
+    console.log(`Making ${username} ${role}`);
+    // Open the database
+    const db = await new sqlite3.Database('server/users.db', (err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Connected to the database.');
+    });
+
+    // update the username in the database
+    result = await new Promise((resolve, reject) => {
+        db.run(
+            'UPDATE users SET role = ? WHERE username = ?',
+            role,
+            username,
+            function (err) {
+                if (err) reject(err);
+                console.log(`User '${username}' made ${role}`);
+                result = true;
+                resolve(result);
+            }
+        );
+    });
+
+    // Close the database
+    db.close((err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Closed the database connection.');
+    });
+    return result;
 }
 
 module.exports.addUser = addUser;
@@ -248,3 +292,4 @@ module.exports.login = login;
 module.exports.changeUsername = changeUsername;
 module.exports.changePassword = changePassword;
 module.exports.deleteUser = deleteUser;
+module.exports.editUserRole = editUserRole;
