@@ -63,10 +63,6 @@ your changes.
 Before submitting a pull request, please ensure that you have run the tests and that your code follows the project's
 coding style guidelines.
 
-## License
-
-TTSM Server is open source software licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
 ## Acknowledgements
 
 TTSM Server is built using [Node.js](https://nodejs.org). It utilizes
@@ -74,7 +70,5 @@ WebSockets for real-time communication. It may use additional libraries and tool
 project's `package.json` file.
 
 ---
-
-[//]: # (For detailed documentation on how to set up the TTSM web client, refer to the [TTSM]&#40;https://github.com/totallyrin/ttsm&#41; repository.)
 
 If you have any questions or need further assistance, feel free to reach out.
