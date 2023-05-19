@@ -63,6 +63,13 @@ async function checkCredentials(username, password) {
  * @returns {Promise<void>}
  */
 async function addUser(username, password = "password", role = "user") {
+  let result = false;
+  if (password === "") {
+    password = "password";
+  }
+  if (role === "") {
+    role = "user";
+  }
   console.log(`creating user ${username}`);
   // Open the database
   const db = await new sqlite3.Database("server/users.db", (err) => {
@@ -82,17 +89,22 @@ async function addUser(username, password = "password", role = "user") {
  );
  `);
 
-  // insert the new user into the database
-  await db.run(
-    "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-    username,
-    await hash(password),
-    role,
-    function (err) {
-      if (err) throw err;
-      console.log(`User '${username}' added to database.`);
-    }
-  );
+  // update the username in the database
+  result = await new Promise(async (resolve, reject) => {
+    // insert the new user into the database
+    db.run(
+      "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+      username,
+      await hash(password),
+      role,
+      function (err) {
+        if (err) reject(err);
+        console.log(`User '${username}' added to database.`);
+        result = true;
+        resolve(result);
+      }
+    );
+  });
 
   // Close the database
   db.close((err) => {
@@ -101,6 +113,7 @@ async function addUser(username, password = "password", role = "user") {
     }
     console.log("Closed the database connection.");
   });
+  return result;
 }
 
 /**
@@ -285,8 +298,11 @@ async function deleteUser(username) {
   return result;
 }
 
-async function editUserRole(username, role) {
+async function editUser(username, role) {
   let result = false;
+  if (role === "") {
+    role = "user";
+  }
   console.log(`Making ${username} ${role}`);
   // Open the database
   const db = await new sqlite3.Database("server/users.db", (err) => {
@@ -326,4 +342,4 @@ module.exports.login = login;
 module.exports.changeUsername = changeUsername;
 module.exports.changePassword = changePassword;
 module.exports.deleteUser = deleteUser;
-module.exports.editUserRole = editUserRole;
+module.exports.editUser = editUser;

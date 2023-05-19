@@ -29,7 +29,7 @@ const {
   deleteUser,
   changeUsername,
   changePassword,
-  editUserRole,
+  editUser,
 } = require("./login.ts");
 
 let minecraft = {
@@ -170,7 +170,7 @@ function killServer(game) {
             const pid = stdout.trim().split(/\s+/)[1];
 
             // Kill the process
-            exec(`taskkill /F /PID ${pid}`, (error, stderr) => {
+            exec(`taskkill /F /PID ${pid}`, (error) => {
               if (error) {
                 console.error(`exec error: ${error}`);
                 reject(error);
@@ -629,7 +629,13 @@ wss.on("connection", async (ws) => {
           data.password,
           data.role
         );
-        ws.send(JSON.stringify({ type: "addUser", success: addResult }));
+        ws.send(
+          JSON.stringify({
+            type: "addUser",
+            username: data.username,
+            success: addResult,
+          })
+        );
         break;
       case "change":
         let result = false;
@@ -642,11 +648,23 @@ wss.on("connection", async (ws) => {
         break;
       case "delUser":
         const delResult = await deleteUser(data.username);
-        ws.send(JSON.stringify({ type: "delUser", success: delResult }));
+        ws.send(
+          JSON.stringify({
+            type: "delUser",
+            username: data.username,
+            success: delResult,
+          })
+        );
         break;
       case "editUser":
-        const editResult = await editUserRole(data.username, data.role);
-        ws.send(JSON.stringify({ type: "editUser", success: editResult }));
+        const editResult = await editUser(data.username, data.role);
+        ws.send(
+          JSON.stringify({
+            type: "editUser",
+            username: data.username,
+            success: editResult,
+          })
+        );
         break;
     }
   });
