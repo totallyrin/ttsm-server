@@ -1,6 +1,6 @@
-const { url } = require("..\\..\\server\\server.js");
+const { url } = require("../../server/server.js");
 const { SlashCommandBuilder } = require("discord.js");
-const servers = require("..\\..\\server\\server.js");
+const servers = require("../../server/server.js");
 const wait = require("node:timers/promises").setTimeout;
 const ws = new WebSocket(url);
 

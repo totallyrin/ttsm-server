@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const servers = require("..\\..\\server\\server.js");
+const servers = require("../../server/server.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,5 +18,3 @@ module.exports = {
     await interaction.reply("```SERVER STATUSES :" + data + "```");
   },
 };
-
-
