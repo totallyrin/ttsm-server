@@ -1,6 +1,4 @@
 const sqlite3 = require("sqlite3");
-// @ts-ignore
-const crypto = require("crypto");
 
 /**
  * password hashing function
@@ -9,12 +7,12 @@ const crypto = require("crypto");
  * @returns {Promise<string>}
  */
 async function hash(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hash));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  const crypto = await import('crypto');
+  const hash = crypto.createHash('sha256');
+  hash.update(password);
+  return hash.digest('hex');
 }
+
 
 async function checkCredentials(username, password) {
   console.log(`checking credentials for user ${username}`);
