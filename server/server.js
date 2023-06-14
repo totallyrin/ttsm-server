@@ -125,7 +125,6 @@ async function killAll() {
  */
 function killServer(game) {
     return new Promise((resolve, reject) => {
-        console.log(game);
         switch (game) {
             // java-based servers
             case "pz":
@@ -339,8 +338,10 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
                 const log = `${
                     game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
                 } server: ${data.trim()}`
-                console.log(log);
-                if (data.includes(online)) updateStatus(ws, game, true);
+                if (data.includes(online)) {
+                    console.log(`${game} server started`);
+                    updateStatus(ws, game, true);
+                }
                 if (data.includes(offline)) {
                     updateStatus(ws, game, "pinging");
                 }
@@ -348,7 +349,6 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
                     exports.servers[game].server.write("Y");
                     updateStatus(ws, game, false);
                 }
-                // ws.send(JSON.stringify(`${game === 'pz' ? 'PZ' : game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.trim()}\n`));
                 sendAll({
                     type: "console",
                     data: log,
@@ -359,15 +359,13 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
 
         exports.servers[game].server.onExit((data) => {
             console.log(
-                `${
-                    game.charAt(0).toUpperCase() + game.slice(1)
-                } server exited with code ${data.exitCode}`
+                `${game} server exited with code ${data.exitCode}`
             );
             sendAll({
                 type: "console",
                 data: `${
-                    game.charAt(0).toUpperCase() + game.slice(1)
-                } server exited with code ${data.exitCode}`,
+                    game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
+                } server: exited with code ${data.exitCode}`,
             });
             updateStatus(ws, game, false);
         });
