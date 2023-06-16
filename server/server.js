@@ -36,6 +36,8 @@ const {
 
 const Queue = require("./queue.ts");
 const logs = new Queue(100);
+const cpuUse = new Queue(60);
+const memoryUse = new Queue(60);
 
 let minecraft = {
     server: undefined,
@@ -481,6 +483,23 @@ startBot();
 const secs = 10;
 console.log(`unknown clients will be removed after ${secs} seconds`);
 
+// save cpu/memory stats
+setInterval(() => {
+    cpu.usage().then((usage) => {
+        cpuUse.add({
+            time: Date.now(),
+            usage: usage.toFixed(2)
+        });
+    });
+    memory.info().then((info) => {
+        const usage = ((info.usedMemMb / info.totalMemMb) * 100).toFixed(2);
+        memoryUse.add({
+            time: Date.now(),
+            usage
+        });
+    });
+}, 1000); // 1 second = 1 * 1000ms
+
 /**
  * code to run on new client connection
  */
@@ -528,14 +547,16 @@ wss.on("connection", async (ws) => {
     }, 1000); // 1s = 1 * 1000ms
 
     // send cpu/memory stats
-    const interval = setInterval(() => {
-        cpu.usage().then((usage) => {
-            ws.send(JSON.stringify({type: "cpu", usage: usage.toFixed(2)}));
-        });
-        memory.info().then((info) => {
-            const usage = ((info.usedMemMb / info.totalMemMb) * 100).toFixed(2);
-            ws.send(JSON.stringify({type: "memory", usage: usage}));
-        });
+    setInterval(() => {
+        // cpu.usage().then((usage) => {
+        //     ws.send(JSON.stringify({type: "cpu", usage: usage.toFixed(2)}));
+        // });
+        // memory.info().then((info) => {
+        //     const usage = ((info.usedMemMb / info.totalMemMb) * 100).toFixed(2);
+        //     ws.send(JSON.stringify({type: "memory", usage: usage}));
+        // });
+        ws.send(JSON.stringify({type: "cpu", usage: cpuUse}));
+        ws.send(JSON.stringify({type: "memory", usage: memoryUse}));
     }, 1000); // 1 second = 1 * 1000ms
 
     // when message is received from client:
@@ -699,6 +720,5 @@ wss.on("connection", async (ws) => {
         } else {
             console.log("unknown client disconnected");
         }
-        clearInterval(interval);
     });
 });
