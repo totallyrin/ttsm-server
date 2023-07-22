@@ -6,9 +6,23 @@
 const {spawn} = require("child_process");
 const {exec} = require("child_process");
 
+const { readFileSync, readFile, writeFile } = require("fs");
+const https = require("https");
 const WebSocket = require("ws");
-const wss = new WebSocket.Server({port: 2911});
+// const wss = new WebSocket.Server({port: 2911});
 global.WebSocket = require("ws");
+
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+// Load SSL certificate and private key
+const serverOptions = {
+  cert: readFileSync("certs/fullchain.pem"),
+  key: readFileSync("certs/privkey.pem"),
+  passphrase: 'password'
+};
+// Create HTTPS server
+const server = https.createServer(serverOptions);
+// Create WebSocket server
+const wss = new WebSocket.Server({ server });
 
 const osu = require("node-os-utils");
 const cpu = osu.cpu;
@@ -23,7 +37,7 @@ const {deploy} = require("../discord/deploy-commands");
 
 const clients = new Set();
 
-const {readFile, writeFile} = require("fs");
+
 const {join} = require("path");
 const {
     login,
@@ -72,7 +86,7 @@ exports.servers = {
     pz: pz,
 };
 
-exports.url = "ws://localhost:2911";
+exports.url = "wss://localhost:2911";
 
 /**
  * get username of client
@@ -338,7 +352,7 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
             if (typeof data !== "string") return;
             if (!data.includes("[K")) {
                 const log = `${
-                    game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
+                      game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
                 } server: ${data.trim()}`
                 if (data.includes(online)) {
                     console.log(`${game} server started`);
@@ -721,4 +735,8 @@ wss.on("connection", async (ws) => {
             console.log("unknown client disconnected");
         }
     });
+});
+
+server.listen(2911, () => {
+  console.log("Secure WebSocket server listening on port 2911");
 });
