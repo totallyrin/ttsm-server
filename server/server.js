@@ -689,6 +689,7 @@ wss.on("connection", async (ws) => {
               JSON.stringify({
                 type: "addUser",
                 username: data.username,
+                role: data.role,
                 success: result,
               }),
             );
@@ -710,6 +711,7 @@ wss.on("connection", async (ws) => {
             JSON.stringify({
               type: "delUser",
               username: data.username,
+              role: data.role,
               success: result,
             }),
           );
@@ -721,6 +723,7 @@ wss.on("connection", async (ws) => {
             JSON.stringify({
               type: "editUser",
               username: data.username,
+              role: data.role,
               success: result,
             }),
           );
