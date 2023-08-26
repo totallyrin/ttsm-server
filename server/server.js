@@ -75,8 +75,7 @@ let valheim = {
 let pz = {
   server: undefined,
   running: false,
-  // TODO: update config file path
-  config: "test.txt",
+  config: "C:\\Users\\lucyw\\Zomboid\\Server\\servertest.ini",
 };
 
 exports.servers = {
