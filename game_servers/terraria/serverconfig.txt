@@ -51,7 +51,7 @@ autocreate=1
 #password=p@55w0rd
 
 #Set the message of the day
-#motd=Please don�t cut the purple trees!
+#motd=totallyrin's server
 
 #Sets the folder where world files will be stored
 #worldpath=C:\Users\Defaults\My Documents\My Games\Terraria\Worlds\
