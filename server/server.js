@@ -7,7 +7,6 @@ const { exec } = require("child_process");
 const { readFileSync, readFile, writeFile } = require("fs");
 const https = require("https");
 const WebSocket = require("ws");
-// const wss = new WebSocket.Server({port: 2911});
 global.WebSocket = require("ws");
 
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
@@ -144,9 +143,7 @@ function killServer(game) {
         // Find the process ID of the Minecraft server
         exec('tasklist | find "java.exe"', (error, stdout) => {
           if (error) {
-            // console.error(`exec error: ${error}`);
             console.error(`could not find any unknown ${game} servers`);
-            // reject(error);
             resolve();
             return;
           }
@@ -175,9 +172,7 @@ function killServer(game) {
           }Server.exe"`,
           (error, stdout) => {
             if (error) {
-              // console.error(`exec error: ${error}`);
               console.error(`could not find any unknown ${game} servers`);
-              // reject(error);
               resolve();
               return;
             }
@@ -349,7 +344,6 @@ function closeUnknownConnection(ws, secs) {
       clients.delete(client);
       console.log("unknown client disconnected");
     }
-    // sendAll({type: 'debug', msg: 'pinging connection'});
   }, secs * 1000);
 }
 
@@ -430,15 +424,10 @@ wss.on("connection", async (ws) => {
       username = "";
     });
 
-  // const username = await getUsername(ws);
   if (username && username !== "") {
     console.log(`client ${username} connected`);
-  } else {
-    console.log("unknown client connected");
-    // closeUnknownConnection(ws, secs);
   }
   clients.add({ ws, username });
-  // const client = getClient(ws);
 
   // send server list to client
   sendServerList(ws);
@@ -454,7 +443,6 @@ wss.on("connection", async (ws) => {
 
   // start loop so that webpage status is updated
   setInterval(() => {
-    // console.log(`updating client ${username}`);
     updateAll(ws);
   }, 1000); // 1s = 1 * 1000ms
 
