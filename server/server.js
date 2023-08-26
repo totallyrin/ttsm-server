@@ -75,7 +75,7 @@ let valheim = {
 let pz = {
   server: undefined,
   running: false,
-  config: "Zomboid\\servertest.ini",
+  config: "Zomboid\\Server\\servertest.ini",
 };
 
 exports.servers = {
