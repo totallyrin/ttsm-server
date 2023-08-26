@@ -1,5 +1,3 @@
-// noinspection JSUnusedLocalSymbols
-
 /**
  * server-side code
  */
