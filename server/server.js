@@ -627,8 +627,6 @@ wss.on("connection", async (ws) => {
     clients.delete(temp);
     if (username && username !== "") {
       console.log(`client ${username} disconnected`);
-    } else {
-      console.log("unknown client disconnected");
     }
   });
 });
