@@ -206,102 +206,6 @@ function killServer(game) {
 }
 
 /**
- * function to start a server
- *
- * @param ws websocket to send status updates over
- * @param game server to start
- * @param cmd start command
- * @param args start arguments
- * @param stop stop command
- * @param online online confirmation phrase
- * @param offline offline confirmation phrase
- * @returns {Promise<void>}
- */
-// async function startServer(ws, game, cmd, args, stop, online, offline) {
-//     // if server is running, send stop command
-//     if (exports.servers[game].running) {
-//         console.log(`attempting to stop ${game} server`);
-//         try {
-//             exports.servers[game].server.stdin.write(stop);
-//         } catch (e) {
-//             console.log(`could not stop ${game} server safely; attempting to kill`);
-//             try {
-//                 exports.servers[game].server.kill();
-//             } catch (e) {
-//                 console.log(`could not kill ${game} server`);
-//             }
-//         }
-//     }
-//     // if server is not running,
-//     else {
-//         updateStatus(ws, game, "pinging");
-//
-//         // kill unknown servers
-//         await killServer(game);
-//
-//         console.log(`starting game server`);
-//         // start a new server
-//         process.chdir(`game_servers\\${game}`);
-//         exports.servers[game].server = spawn(cmd, args);
-//         process.chdir("..\\..");
-//
-//         exports.servers[game].server.stdout.on("data", (data) => {
-//             if (typeof data !== "string") return;
-//             console.log(
-//                 `${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data
-//                     .toString()
-//                     .trim()}`
-//             );
-//             if (data !== ("" || "\n" || "\r")) {
-//                 console.log(
-//                     `${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data
-//                         .toString()
-//                         .trim()}`
-//                 );
-//                 if (data.includes(online)) updateStatus(ws, game, true);
-//                 if (data.includes(offline)) updateStatus(ws, game, "pinging");
-//                 // ws.send(JSON.stringify(`${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.toString().trim()}\n`));
-//                 sendAll({
-//                     type: "console",
-//                     data: `${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data
-//                         .toString()
-//                         .trim()}\n`,
-//                 });
-//             }
-//         });
-//
-//         exports.servers[game].server.stderr.on("data", (data) => {
-//             if (typeof data !== "string") return;
-//             console.error(
-//                 `${game.charAt(0).toUpperCase() + game.slice(1)} server: ${data.trim()}`
-//             );
-//             ws.send(
-//                 JSON.stringify(
-//                     `${
-//                         game.charAt(0).toUpperCase() + game.slice(1)
-//                     } server: ${data.trim()}\n`
-//                 )
-//             );
-//         });
-//
-//         exports.servers[game].server.on("close", (code) => {
-//             console.log(
-//                 `${
-//                     game.charAt(0).toUpperCase() + game.slice(1)
-//                 } server exited with code ${code}`
-//             );
-//             sendAll({
-//                 type: "console",
-//                 data: `${
-//                     game.charAt(0).toUpperCase() + game.slice(1)
-//                 } server exited with code ${code}`,
-//             });
-//             updateStatus(ws, game, false);
-//         });
-//     }
-// }
-
-/**
  * function to start a server using node-pty
  *
  * @param ws websocket to send status updates over
@@ -559,13 +463,6 @@ wss.on("connection", async (ws) => {
 
   // send cpu/memory stats
   setInterval(() => {
-    // cpu.usage().then((usage) => {
-    //     ws.send(JSON.stringify({type: "cpu", usage: usage.toFixed(2)}));
-    // });
-    // memory.info().then((info) => {
-    //     const usage = ((info.usedMemMb / info.totalMemMb) * 100).toFixed(2);
-    //     ws.send(JSON.stringify({type: "memory", usage: usage}));
-    // });
     ws.send(JSON.stringify({ type: "cpu", usage: cpuUse }));
     ws.send(JSON.stringify({ type: "memory", usage: memoryUse }));
   }, 1000); // 1 second = 1 * 1000ms
@@ -589,7 +486,6 @@ wss.on("connection", async (ws) => {
       case "startStop":
         switch (data.game) {
           case "minecraft":
-            // await startServer(ws, data.game, 'java', ['-Xmx1024M', '-Xms1024M', '-jar', 'server.jar', 'nogui'], '/stop\n', 'Done', 'Stopping the server');
             await startServerPTY(
               ws,
               data.game,
