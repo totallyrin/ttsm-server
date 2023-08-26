@@ -510,7 +510,7 @@ wss.on("connection", async (ws) => {
               [".\\start-server.bat"],
               "\x03",
               "Game server connected",
-              "World save writing",
+              "Net scene destroyed",
             );
             break;
           case "pz":
