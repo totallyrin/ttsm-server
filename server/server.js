@@ -118,17 +118,6 @@ function getClient(ws) {
 }
 
 /**
- * function to kill all foreign game servers
- *
- * @returns {Promise<void>}
- */
-async function killAll() {
-  for (const game in exports.servers) {
-    await killServer(game);
-  }
-}
-
-/**
  * function to kill a given foreign game server
  *
  * @param game
