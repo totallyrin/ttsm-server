@@ -66,8 +66,7 @@ let terraria = {
 let valheim = {
   server: undefined,
   running: false,
-  // TODO: update config file path
-  config: "test.txt",
+  config: "start-server.bat",
 };
 
 let pz = {
