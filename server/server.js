@@ -626,7 +626,7 @@ wss.on("connection", async (ws) => {
               [".\\start-server.bat"],
               "quit\r",
               "Server Steam ID",
-              "QuitCommand",
+              "Shutting down Steam Game Server",
             );
             break;
         }
