@@ -1,9 +1,6 @@
 /**
  * server-side code
  */
-const { spawn } = require("child_process");
-const { exec } = require("child_process");
-
 const { readFileSync, readFile, writeFile } = require("fs");
 const https = require("https");
 const WebSocket = require("ws");
@@ -25,14 +22,10 @@ const osu = require("node-os-utils");
 const cpu = osu.cpu;
 const memory = osu.mem;
 
-const os = require("os");
-const pty = require("node-pty");
-const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
-
-const { startBot } = require("../discord/discord.js");
+const { startBot } = require("../discord/discord");
 const { deploy } = require("../discord/deploy-commands");
 
-const clients = new Set();
+exports.clients = new Set();
 
 const { join } = require("path");
 const {
@@ -46,7 +39,8 @@ const {
 } = require("./login.ts");
 
 const Queue = require("./queue.ts");
-const logs = new Queue(100);
+const { startServerPTY, updateGame } = require("./serverutils.js");
+exports.logs = new Queue(100);
 const cpuUse = new Queue(60);
 const memoryUse = new Queue(60);
 
@@ -109,165 +103,12 @@ function getUsername(ws) {
  * @returns {any|null}
  */
 function getClient(ws) {
-  for (const client of clients) {
+  for (const client of exports.clients) {
     if (client.ws === ws) {
       return client;
     }
   }
   return null;
-}
-
-/**
- * function to kill a given foreign game server
- *
- * @param game
- * @returns {Promise<void>}
- */
-function killServer(game) {
-  return new Promise((resolve, reject) => {
-    switch (game) {
-      // java-based servers
-      case "pz":
-      case "minecraft":
-        // Find the process ID of the Minecraft server
-        exec('tasklist | find "java.exe"', (error, stdout) => {
-          if (error) {
-            console.error(`could not find any unknown ${game} servers`);
-            resolve();
-            return;
-          }
-
-          // Extract the process ID from the output
-          const pid = stdout.trim().split(/\s+/)[1];
-
-          // Kill the process
-          exec(`taskkill /F /PID ${pid}`, (error) => {
-            if (error) {
-              console.error(`exec error: ${error}`);
-              reject(error);
-            }
-
-            console.log("unknown servers killed");
-            resolve();
-          });
-        });
-        break;
-      case "valheim":
-      case "terraria":
-        // Find the process ID of the Minecraft server
-        exec(
-          `tasklist | find "${
-            game.charAt(0).toUpperCase() + game.slice(1)
-          }Server.exe"`,
-          (error, stdout) => {
-            if (error) {
-              console.error(`could not find any unknown ${game} servers`);
-              resolve();
-              return;
-            }
-
-            // Extract the process ID from the output
-            const pid = stdout.trim().split(/\s+/)[1];
-
-            // Kill the process
-            exec(`taskkill /F /PID ${pid}`, (error) => {
-              if (error) {
-                console.error(`exec error: ${error}`);
-                reject(error);
-              }
-
-              console.log("unknown servers killed");
-              resolve();
-            });
-          },
-        );
-        break;
-    }
-  });
-}
-
-/**
- * function to start a server using node-pty
- *
- * @param ws websocket to send status updates over
- * @param game server to start
- * @param args start arguments
- * @param stop stop command
- * @param online online confirmation phrase
- * @param offline offline confirmation phrase
- * @returns {Promise<void>}
- */
-async function startServerPTY(ws, game, args, stop, online, offline) {
-  // if server is running, send stop command
-  if (exports.servers[game].running) {
-    console.log(`attempting to stop ${game} server`);
-    try {
-      exports.servers[game].server.write(stop);
-    } catch (e) {
-      console.log(`could not stop ${game} server safely; attempting to kill`);
-      try {
-        exports.servers[game].server.kill();
-      } catch (e) {
-        console.log(`could not kill ${game} server`);
-      }
-    }
-  }
-  // if server is not running,
-  else {
-    updateStatus(ws, game, "pinging");
-
-    // kill unknown servers
-    await killServer(game);
-
-    console.log(`starting ${game} server`);
-    // start a new server
-    process.chdir(`game_servers\\${game}`);
-    exports.servers[game].server = pty.spawn(shell, args, {
-      name: `${
-        game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-      }Server`,
-      cwd: process.env.PWD,
-      env: process.env,
-      cols: 1000,
-    });
-    process.chdir("..\\..");
-
-    exports.servers[game].server.onData((data) => {
-      if (typeof data !== "string") return;
-      if (!data.includes("[K")) {
-        const log = `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server: ${data.trim()}`;
-        if (data.includes(online)) {
-          console.log(`${game} server started`);
-          updateStatus(ws, game, true);
-        }
-        if (data.includes(offline)) {
-          updateStatus(ws, game, "pinging");
-        }
-        if (data.includes("Terminate batch job (Y/N)?")) {
-          exports.servers[game].server.write("Y");
-          updateStatus(ws, game, false);
-        }
-        sendAll({
-          type: "console",
-          data: log,
-        });
-        logs.add(log);
-      }
-    });
-
-    exports.servers[game].server.onExit((data) => {
-      console.log(`${game} server exited with code ${data.exitCode}`);
-      sendAll({
-        type: "console",
-        data: `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server: exited with code ${data.exitCode}`,
-      });
-      updateStatus(ws, game, false);
-    });
-  }
 }
 
 /**
@@ -288,52 +129,11 @@ function updateAll(ws) {
   }
 }
 
-/**
- * function to send server status updates
- *
- * @param ws web server for messaging
- * @param game game to update
- * @param status status to update to
- */
-function updateStatus(ws, game, status) {
-  exports.servers[game].running = status;
-  ws.send(
-    JSON.stringify({
-      type: "serverState",
-      game: game,
-      running: exports.servers[game].running,
-    }),
-  );
-}
-
-function sendAll(data) {
-  for (const client of clients) {
-    const ws = client.ws;
-    ws.send(JSON.stringify(data));
-  }
-}
-
 function sendServerList(ws) {
   // send server list to client
   for (const game in exports.servers) {
     ws.send(JSON.stringify({ type: "serverList", name: game.toString() }));
   }
-}
-
-function closeUnknownConnection(ws, secs) {
-  setTimeout(async () => {
-    console.log("attempting to close unknown connection");
-    const client = getClient(ws);
-    if (client && (!client.username || client.username === "")) {
-      await ws.send(
-        JSON.stringify({ type: "debug", msg: "connection closing" }),
-      );
-      console.log(`closing connection with client ${client.username}`);
-      client.ws.close(1000, "Empty username");
-      clients.delete(client);
-      console.log("unknown client disconnected");
-    }
-  }, secs * 1000);
 }
 
 function sendConfig(ws) {
@@ -361,7 +161,7 @@ function sendConfig(ws) {
 }
 
 function sendLogs(ws) {
-  for (const log of logs.getItems()) {
+  for (const log of exports.logs.getItems()) {
     ws.send(
       JSON.stringify({
         type: "console",
@@ -416,7 +216,7 @@ wss.on("connection", async (ws) => {
   if (username && username !== "") {
     console.log(`client ${username} connected`);
   }
-  clients.add({ ws, username });
+  exports.clients.add({ ws, username });
 
   // send server list to client
   sendServerList(ws);
@@ -454,8 +254,11 @@ wss.on("connection", async (ws) => {
           }`,
         );
         const temp = getClient(ws);
-        clients.delete(temp);
-        clients.add({ ws: ws, username: data.username });
+        exports.clients.delete(temp);
+        exports.clients.add({ ws: ws, username: data.username });
+        break;
+      case "update":
+        await updateGame(ws, data.game);
         break;
       case "startStop":
         switch (data.game) {
@@ -613,7 +416,7 @@ wss.on("connection", async (ws) => {
 
   ws.on("close", () => {
     let temp = getClient(ws);
-    clients.delete(temp);
+    exports.clients.delete(temp);
     if (username && username !== "") {
       console.log(`client ${username} disconnected`);
     }
