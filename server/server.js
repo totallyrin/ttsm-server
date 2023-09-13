@@ -2,15 +2,20 @@
  * server-side code
  */
 const { readFileSync, readFile, writeFile } = require("fs");
+const { join } = require("path");
 const https = require("https");
 const WebSocket = require("ws");
 global.WebSocket = require("ws");
 
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+
+// Define the absolute path to your certificate files
+const certPath = "C:\\Certbot\\live\\totallyrin.ddns.net\\";
+
 // Load SSL certificate and private key
 const serverOptions = {
-  cert: readFileSync("certs/fullchain.pem"),
-  key: readFileSync("certs/privkey.pem"),
+  cert: readFileSync(path.join(certPath, "fullchain.pem")),
+  key: readFileSync(path.join(certPath, "privkey.pem")),
   passphrase: "password",
 };
 // Create HTTPS server
@@ -27,7 +32,6 @@ const { deploy } = require("../discord/deploy-commands");
 
 exports.clients = new Set();
 
-const { join } = require("path");
 const {
   login,
   addUser,
@@ -199,6 +203,7 @@ setInterval(() => {
  * code to run on new client connection
  */
 wss.on("connection", async (ws) => {
+  console.log("user connecting");
   let username;
   Promise.race([
     getUsername(ws),
