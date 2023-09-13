@@ -14,8 +14,8 @@ const certPath = "C:\\Certbot\\live\\totallyrin.ddns.net\\";
 
 // Load SSL certificate and private key
 const serverOptions = {
-  cert: readFileSync(path.join(certPath, "fullchain.pem")),
-  key: readFileSync(path.join(certPath, "privkey.pem")),
+  cert: readFileSync(join(certPath, "fullchain.pem")),
+  key: readFileSync(join(certPath, "privkey.pem")),
   passphrase: "password",
 };
 // Create HTTPS server
