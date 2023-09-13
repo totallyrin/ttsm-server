@@ -203,7 +203,6 @@ setInterval(() => {
  * code to run on new client connection
  */
 wss.on("connection", async (ws) => {
-  console.log("user connecting");
   let username;
   Promise.race([
     getUsername(ws),
