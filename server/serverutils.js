@@ -176,11 +176,13 @@ async function updateGame(ws, game) {
   }
   // if server is not running,
   else {
+    updateStatus(ws, game, "updating");
+    
     // kill unknown servers
     await killServer(game);
 
     console.log(`updating ${game} server`);
-    // start a new server
+    // start a new process
     process.chdir(`game_servers\\updates`);
     const update = pty.spawn(shell, [`.\\update-${game}.bat`], {
       name: `${
@@ -196,9 +198,8 @@ async function updateGame(ws, game) {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
         const log = `${data.trim()}`;
-        if (data.includes("Terminate batch job (Y/N)?")) {
+        if (data.includes("Replace ..\minecraft\server.jar with latest [Y,N]?") || data.includes("Terminate batch job (Y/N)?")) {
           update.write("Y");
-          updateStatus(ws, game, "updating");
         }
         sendAll({
           type: "console",
@@ -218,6 +219,9 @@ async function updateGame(ws, game) {
           game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
         } server updated: update exited with code ${data.exitCode}`,
       });
+      logs.add(`${
+          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
+        } server updated: update exited with code ${data.exitCode}`);
       updateStatus(ws, game, false);
     });
   }
