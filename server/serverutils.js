@@ -184,7 +184,7 @@ async function updateGame(ws, game) {
     console.log(`updating ${game} server`);
     // start a new process
     process.chdir(`game_servers\\updates`);
-    const update = pty.spawn(shell, [`.\\update-${game}.bat`], {
+    servers[game].server = pty.spawn(shell, [`.\\update-${game}.bat`], {
       name: `${
         game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
       }Update`,
