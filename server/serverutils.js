@@ -164,9 +164,9 @@ async function updateGame(ws, game) {
   const logs = require("./server").logs;
   // if server is running, don't update
   if (servers[game].running) {
-    const log = `Cannot update ${
+    const log = `${
       game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-    } server: server is running`;
+    } server: Cannot update; server is running`;
     console.log(log);
     sendAll({
       type: "console",
@@ -197,7 +197,9 @@ async function updateGame(ws, game) {
     update.onData((data) => {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
-        const log = `${data.trim()}`;
+        const log = `${
+          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
+        } server: ${data.trim()}`;
         if (data.includes("Replace ..\minecraft\server.jar with latest [Y,N]?") || data.includes("Terminate batch job (Y/N)?")) {
           update.write("Y");
         }
@@ -211,17 +213,16 @@ async function updateGame(ws, game) {
 
     update.onExit((data) => {
       console.log(
-        `${game} server updated: update exited with code ${data.exitCode}`,
+        `${game} server: update exited with code ${data.exitCode}`,
       );
+      const log = `${
+          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
+        } server: update exited with code ${data.exitCode}`;
       sendAll({
         type: "console",
-        data: `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server updated: update exited with code ${data.exitCode}`,
+        data: log,
       });
-      logs.add(`${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server updated: update exited with code ${data.exitCode}`);
+      logs.add(log);
       updateStatus(ws, game, false);
     });
   }
