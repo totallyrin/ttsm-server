@@ -211,7 +211,7 @@ async function updateGame(ws, game) {
       }
     });
 
-    update.onExit((data) => {
+    servers[game].server.onExit((data) => {
       console.log(
         `${game} server: update exited with code ${data.exitCode}`,
       );
