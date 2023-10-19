@@ -194,14 +194,14 @@ async function updateGame(ws, game) {
     });
     process.chdir("..\\..");
 
-    update.onData((data) => {
+    servers[game].server.onData((data) => {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
         const log = `${
           game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
         } server: ${data.trim()}`;
         if (data.includes("Replace ..\minecraft\server.jar with latest [Y,N]?") || data.includes("Terminate batch job (Y/N)?")) {
-          update.write("Y");
+          servers[game].server.write("Y");
         }
         sendAll({
           type: "console",
