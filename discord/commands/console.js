@@ -1,6 +1,6 @@
 const { url } = require("../../server/server.js");
 const { SlashCommandBuilder } = require("discord.js");
-const servers = require("../../server/server.js");
+const servers = require("../../server/serverconfig.js");
 const ws = new WebSocket(url);
 
 const choices = Object.keys(servers.servers).map((serverName) => ({

@@ -1,16 +1,11 @@
 const { url } = require("../../server/server.js");
 const { SlashCommandBuilder } = require("discord.js");
-const servers = require("../../server/server.js");
+const servers = require("../../server/serverconfig.js").servers;
 const wait = require("node:timers/promises").setTimeout;
 const ws = new WebSocket(url);
 
-const choices = Object.keys(servers.servers).map((serverName) => ({
-  name: `${
-    serverName === "pz"
-      ? "Project Zomboid"
-      : serverName.toString().charAt(0).toUpperCase() +
-        serverName.toString().slice(1)
-  }`,
+const choices = Object.keys(servers).map((serverName) => ({
+  name: servers[serverName].name,
   value: serverName,
 }));
 
@@ -28,30 +23,26 @@ module.exports = {
   // check if game exists
   async execute(interaction) {
     const game = interaction.options.getString("game", true).toLowerCase();
-    const game_str =
-      game === "pz"
-        ? "Project Zomboid"
-        : game.charAt(0).toUpperCase() + game.slice(1);
 
-    if (!(game in servers.servers)) {
+    if (!(game in servers)) {
       return interaction.reply(
-        `There is no server for the game \`${game_str}\`!`,
+        `There is no server for the game \`${servers[game].name}\`!`,
       );
     }
 
     let started = false;
 
-    if (servers.servers[game].running === false) {
+    if (servers[game].running === false) {
       ws.send(JSON.stringify({ type: "update", game: game }));
-      await interaction.reply(`Updaing \`${game_str}\` server...`);
+      await interaction.reply(`Updaing \`${servers[game].name}\` server...`);
 
       // when server is running, send confirmation message
       const intervalId = setInterval(async () => {
-        if (servers.servers[game].running === true) {
+        if (servers[game].running === true) {
           clearInterval(intervalId);
           started = true;
           return await interaction.editReply(
-            `Successfully updated \`${game_str}\` server!`,
+            `Successfully updated \`${servers[game].name}\` server!`,
           );
         }
       }, 100); // Check every 100ms
@@ -65,12 +56,12 @@ module.exports = {
         process.on("SIGINT", cleanup);
         process.on("SIGTERM", cleanup);
         return await interaction.editReply(
-          `Could not update \`${game_str}\` server!`,
+          `Could not update \`${servers[game].name}\` server!`,
         );
       }
     } else {
       return interaction.reply(
-        `Could not update: \`${game_str}\` server is running!`,
+        `Could not update: \`${servers[game].name}\` server is running!`,
       );
     }
   },

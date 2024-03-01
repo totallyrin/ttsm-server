@@ -1,8 +1,10 @@
 const { exec } = require("child_process");
 const os = require("os");
 const pty = require("node-pty");
-const { logs } = require("./server");
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
+const servers = require("./serverconfig").servers;
+const logs = require("./server").logs;
+const clients = require("./server").clients;
 
 /**
  * function to kill a given foreign game server
@@ -84,14 +86,12 @@ async function killServer(game) {
  * @param offline offline confirmation phrase
  * @returns {Promise<void>}
  */
-async function startServerPTY(ws, game, args, stop, online, offline) {
-  const servers = require("./server").servers;
-  const logs = require("./server").logs;
+async function startServerPTY(ws, game) {
   // if server is running, send stop command
   if (servers[game].running) {
     console.log(`attempting to stop ${game} server`);
     try {
-      servers[game].server.write(stop);
+      servers[game].server.write(servers[game].stop);
     } catch (e) {
       console.log(`could not stop ${game} server safely; attempting to kill`);
       try {
@@ -111,10 +111,8 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
     console.log(`starting ${game} server`);
     // start a new server
     process.chdir(`game_servers\\${game}`);
-    servers[game].server = pty.spawn(shell, args, {
-      name: `${
-        game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-      }Server`,
+    servers[game].server = pty.spawn(shell, servers[game].args, {
+      name: `${game}Server`,
       cwd: process.env.PWD,
       env: process.env,
       cols: 1000,
@@ -124,14 +122,12 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
     servers[game].server.onData((data) => {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
-        const log = `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server: ${data.trim()}`;
-        if (data.includes(online)) {
+        const log = `${servers[game].name} server: ${data.trim()}`;
+        if (data.includes(servers[game].online)) {
           console.log(`${game} server started`);
           updateStatus(ws, game, true);
         }
-        if (data.includes(offline)) {
+        if (data.includes(servers[game].offline)) {
           updateStatus(ws, game, "pinging");
         }
         if (data.includes("Terminate batch job (Y/N)?")) {
@@ -150,9 +146,7 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
       console.log(`${game} server exited with code ${data.exitCode}`);
       sendAll({
         type: "console",
-        data: `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server: exited with code ${data.exitCode}`,
+        data: `${servers[game].name} server: exited with code ${data.exitCode}`,
       });
       updateStatus(ws, game, false);
     });
@@ -160,13 +154,9 @@ async function startServerPTY(ws, game, args, stop, online, offline) {
 }
 
 async function updateGame(ws, game) {
-  const servers = require("./server").servers;
-  const logs = require("./server").logs;
   // if server is running, don't update
   if (servers[game].running) {
-    const log = `${
-      game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-    } server: Cannot update; server is running`;
+    const log = `${servers[game].name} server: Cannot update; server is running`;
     console.log(log);
     sendAll({
       type: "console",
@@ -185,9 +175,7 @@ async function updateGame(ws, game) {
     // start a new process
     process.chdir(`game_servers\\updates`);
     servers[game].server = pty.spawn(shell, [`.\\update-${game}.bat`], {
-      name: `${
-        game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-      }Update`,
+      name: `${game}Update`,
       cwd: process.env.PWD,
       env: process.env,
       cols: 1000,
@@ -197,9 +185,7 @@ async function updateGame(ws, game) {
     servers[game].server.onData((data) => {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
-        const log = `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server: ${data.trim()}`;
+        const log = `${servers[game].name} server: ${data.trim()}`;
         if (data.includes("Replace ..\minecraft\server.jar with latest [Y,N]?") || data.includes("Terminate batch job (Y/N)?")) {
           servers[game].server.write("Y");
         }
@@ -215,9 +201,7 @@ async function updateGame(ws, game) {
       console.log(
         `${game} server: update exited with code ${data.exitCode}`,
       );
-      const log = `${
-          game === "pz" ? "PZ" : game.charAt(0).toUpperCase() + game.slice(1)
-        } server: update exited with code ${data.exitCode}`;
+      const log = `${servers[game].name} server: update exited with code ${data.exitCode}`;
       sendAll({
         type: "console",
         data: log,
@@ -236,7 +220,6 @@ async function updateGame(ws, game) {
  * @param status status to update to
  */
 function updateStatus(ws, game, status) {
-  const servers = require("./server").servers;
   servers[game].running = status;
   ws.send(
     JSON.stringify({
@@ -248,7 +231,6 @@ function updateStatus(ws, game, status) {
 }
 
 function sendAll(data) {
-  const clients = require("./server").clients;
   for (const client of clients) {
     const ws = client.ws;
     ws.send(JSON.stringify(data));

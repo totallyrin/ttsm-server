@@ -48,36 +48,7 @@ exports.logs = new Queue(100);
 const cpuUse = new Queue(60);
 const memoryUse = new Queue(60);
 
-let minecraft = {
-  server: undefined,
-  running: false,
-  config: "server.properties",
-};
-
-let terraria = {
-  server: undefined,
-  running: false,
-  config: "serverconfig.txt",
-};
-
-let valheim = {
-  server: undefined,
-  running: false,
-  config: "start-server.bat",
-};
-
-let pz = {
-  server: undefined,
-  running: false,
-  config: "Zomboid\\Server\\servertest.ini",
-};
-
-exports.servers = {
-  minecraft: minecraft,
-  terraria: terraria,
-  valheim: valheim,
-  pz: pz,
-};
+const servers = require("./serverconfig.js").servers;
 
 exports.url = "wss://localhost:2911";
 
@@ -122,12 +93,12 @@ function getClient(ws) {
  */
 function updateAll(ws) {
   // console.log('sending server status');
-  for (const server in exports.servers) {
+  for (const server in servers) {
     ws.send(
       JSON.stringify({
         type: "serverState",
         game: server,
-        running: exports.servers[server].running,
+        running: servers[server].running,
       }),
     );
   }
@@ -135,15 +106,15 @@ function updateAll(ws) {
 
 function sendServerList(ws) {
   // send server list to client
-  for (const game in exports.servers) {
+  for (const game in servers) {
     ws.send(JSON.stringify({ type: "serverList", name: game.toString() }));
   }
 }
 
 function sendConfig(ws) {
   // send configs to client
-  for (const game in exports.servers) {
-    const config = exports.servers[game].config;
+  for (const game in servers) {
+    const config = servers[game].config;
     const filePath = join(
       __dirname,
       `../game_servers/${game.toString()}/${config}`,
@@ -265,59 +236,21 @@ wss.on("connection", async (ws) => {
         await updateGame(ws, data.game);
         break;
       case "startStop":
-        switch (data.game) {
-          case "minecraft":
-            await startServerPTY(
-              ws,
-              data.game,
-              [".\\start-server.bat"],
-              "stop\r",
-              "Done",
-              "Stopping the server",
-            );
-            break;
-          case "terraria":
-            await startServerPTY(
-              ws,
-              data.game,
-              [".\\start-server.bat"],
-              "exit\r",
-              "Server started",
-              "Saving before exit...",
-            );
-            break;
-          case "valheim":
-            await startServerPTY(
-              ws,
-              data.game,
-              [".\\start-server.bat"],
-              "\x03",
-              "Game server connected",
-              "Net scene destroyed",
-            );
-            break;
-          case "pz":
-            await startServerPTY(
-              ws,
-              data.game,
-              [".\\start-server.bat"],
-              "quit\r",
-              "Server Steam ID",
-              "Shutting down Steam Game Server",
-            );
-            break;
-        }
+        await startServerPTY(
+          ws,
+          data.game
+        );
         updateAll(ws);
         break;
       case "command":
-        if (exports.servers[data.game].server) {
-          exports.servers[data.game].server.write(data.command);
-          exports.servers[data.game].server.write("\r");
+        if (servers[data.game].server) {
+          servers[data.game].server.write(data.command);
+          servers[data.game].server.write("\r");
         }
         break;
       case "config":
         // handle saving
-        const config = exports.servers[data.game].config;
+        const config = servers[data.game].config;
         const filePath = join(
           __dirname,
           `../game_servers/${data.game}/${config}`,
