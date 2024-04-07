@@ -30,7 +30,7 @@ const memory = osu.mem;
 const { startBot } = require("../discord/discord");
 const { deploy } = require("../discord/deploy-commands");
 
-exports.clients = new Set();
+module.exports.clients = new Set();
 
 const {
   login,
@@ -43,14 +43,14 @@ const {
 } = require("./login.ts");
 
 const Queue = require("./queue.ts");
-const { startServerPTY, updateGame } = require("./serverutils.js");
-exports.logs = new Queue(100);
+module.exports.logs = new Queue(100);
+const { startServerPTY, updateGame } = require("./serverutils");
 const cpuUse = new Queue(60);
 const memoryUse = new Queue(60);
 
-const servers = require("./serverconfig.js").servers;
+const servers = require("./serverconfig").servers;
 
-exports.url = "wss://localhost:2911";
+module.exports.url = "wss://localhost:2911";
 
 /**
  * get username of client
@@ -236,10 +236,7 @@ wss.on("connection", async (ws) => {
         await updateGame(ws, data.game);
         break;
       case "startStop":
-        await startServerPTY(
-          ws,
-          data.game
-        );
+        await startServerPTY(ws, data.game);
         updateAll(ws);
         break;
       case "command":

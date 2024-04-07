@@ -167,7 +167,7 @@ async function updateGame(ws, game) {
   // if server is not running,
   else {
     updateStatus(ws, game, "updating");
-    
+
     // kill unknown servers
     await killServer(game);
 
@@ -186,7 +186,10 @@ async function updateGame(ws, game) {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
         const log = `${servers[game].name} server: ${data.trim()}`;
-        if (data.includes("Replace ..\minecraft\server.jar with latest [Y,N]?") || data.includes("Terminate batch job (Y/N)?")) {
+        if (
+          data.includes("Replace ..minecraftserver.jar with latest [Y,N]?") ||
+          data.includes("Terminate batch job (Y/N)?")
+        ) {
           servers[game].server.write("Y");
         }
         sendAll({
@@ -198,9 +201,7 @@ async function updateGame(ws, game) {
     });
 
     servers[game].server.onExit((data) => {
-      console.log(
-        `${game} server: update exited with code ${data.exitCode}`,
-      );
+      console.log(`${game} server: update exited with code ${data.exitCode}`);
       const log = `${servers[game].name} server: update exited with code ${data.exitCode}`;
       sendAll({
         type: "console",

@@ -31,7 +31,8 @@ async function checkCredentials(username, password) {
       async function (err, row) {
         if (err) throw err;
         // @ts-ignore
-        if (row && row.password === (await hash(password))) {
+        if (row && row.password === password) {
+          //(await hash(password))) {
           resolve(true);
         } else {
           resolve(false);
@@ -261,7 +262,8 @@ async function changePassword(username, oldPassword, newPassword) {
   result = await new Promise(async (resolve, reject) => {
     db.run(
       "UPDATE users SET password = ? WHERE username = ?",
-      await hash(newPassword),
+      // await hash(newPassword),
+      newPassword,
       username,
       function (err) {
         if (err) reject(err);
