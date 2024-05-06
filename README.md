@@ -54,15 +54,6 @@ handle
 various server management operations such as starting and stopping game servers, retrieving server logs, and performing
 configuration changes.
 
-## Contributing
-
-Contributions to TTSM Server are welcome! If you find a bug or have a feature request, please open an issue on the
-GitHub repository. If you'd like to contribute code, feel free to fork the repository and submit a pull request with
-your changes.
-
-Before submitting a pull request, please ensure that you have run the tests and that your code follows the project's
-coding style guidelines.
-
 ## Acknowledgements
 
 TTSM Server is built using [Node.js](https://nodejs.org). It utilizes
