@@ -152,13 +152,15 @@ async function login(ws, username, password) {
   });
 
   if (username && password) {
+    const hashedPassword = await hash(password);
+    console.log(hashedPassword)
     // Query the database for the user
     await db.get(
       `SELECT *
              FROM users
              WHERE username = ?
                AND password = ?`,
-      [username, await hash(password)],
+      [username, hashedPassword],
       (err, row) => {
         if (err) {
           console.error(err.message);
