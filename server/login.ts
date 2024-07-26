@@ -32,6 +32,7 @@ async function checkCredentials(username, password) {
         if (err) throw err;
         // @ts-ignore
         if (row && row.password === (await hash(password))) {
+          console.log(`User ${username} logged in.`);
           resolve(true);
         } else {
           resolve(false);
