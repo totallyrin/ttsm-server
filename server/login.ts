@@ -102,13 +102,13 @@ async function addUser(username, password = "password", role = "no-auth") {
     `);
 
   try {
-    // update the username in the database
     result = await new Promise(async (resolve, reject) => {
       // insert the new user into the database
+      const hashedPassword = await hash(password);
       db.run(
         "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
         username,
-        await hash(password),
+        hashedPassword,
         role,
         function (err) {
           if (err) reject(err);
