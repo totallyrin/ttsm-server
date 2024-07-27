@@ -9,17 +9,6 @@ let minecraft = {
   offline: "Stopping the server",
 };
 
-let tekkit2 = {
-  name: "Tekkit 2",
-  server: undefined,
-  running: false,
-  config: "server.properties",
-  args: [".\\LaunchServer.bat"],
-  stop: "stop\r",
-  online: "Done",
-  offline: "Stopping the server",
-};
-
 let terraria = {
   name: "Terraria",
   server: undefined,
@@ -64,11 +53,22 @@ let redm = {
   offline: "",
 };
 
+let tekkit2 = {
+  name: "Tekkit 2",
+  server: undefined,
+  running: false,
+  config: "server.properties",
+  args: [".\\LaunchServer.bat"],
+  stop: "stop\r",
+  online: "Done",
+  offline: "Stopping the server",
+};
+
 module.exports.servers = {
   minecraft: minecraft,
-  tekkit2: tekkit2,
   terraria: terraria,
   valheim: valheim,
   pz: pz,
   redm: redm,
+  tekkit2: tekkit2,
 };
