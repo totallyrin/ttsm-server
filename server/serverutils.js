@@ -82,10 +82,6 @@ async function killServer(game) {
  *
  * @param ws websocket to send status updates over
  * @param game server to start
- * @param args start arguments
- * @param stop stop command
- * @param online online confirmation phrase
- * @param offline offline confirmation phrase
  * @returns {Promise<void>}
  */
 async function startServerPTY(ws, game) {
@@ -132,7 +128,7 @@ async function startServerPTY(ws, game) {
         if (data.includes(servers[game].offline)) {
           updateStatus(ws, game, "pinging");
         }
-        if (data.includes("Terminate batch job (Y/N)?")) {
+        if (data.includes("Terminate batch job (Y/N)?") || data.includes("Press any key")) {
           servers[game].server.write("Y");
           updateStatus(ws, game, false);
         }
