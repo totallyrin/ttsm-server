@@ -98,6 +98,7 @@ function updateAll(ws) {
       JSON.stringify({
         type: "serverState",
         game: server,
+        name: servers[server].name,
         running: servers[server].running,
       }),
     );
