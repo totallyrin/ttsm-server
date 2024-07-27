@@ -17,6 +17,7 @@ async function killServer(game) {
     switch (game) {
       // java-based servers
       case "pz":
+      case "tekkit2":
       case "minecraft":
         // Find the process ID of the Minecraft server
         exec('tasklist | find "java.exe"', (error, stdout) => {
@@ -42,8 +43,9 @@ async function killServer(game) {
         });
         break;
       case "valheim":
+      case "redm":
       case "terraria":
-        // Find the process ID of the Terraria server
+        // Find the process ID of the server
         exec(
           `tasklist | find "${
             game.charAt(0).toUpperCase() + game.slice(1)
@@ -121,7 +123,7 @@ async function startServerPTY(ws, game) {
 
     servers[game].server.onData((data) => {
       if (typeof data !== "string") return;
-      if (!data.includes("[K")) {
+      if (!data.includes("[K") && !data.includes("C:\\Users\\")) {
         const log = `${servers[game].name} server: ${data.trim()}`;
         if (data.includes(servers[game].online)) {
           console.log(`${game} server started`);
