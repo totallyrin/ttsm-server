@@ -108,7 +108,11 @@ function updateAll(ws) {
 function sendServerList(ws) {
   // send server list to client
   for (const game in servers) {
-    ws.send(JSON.stringify({ type: "serverList", name: game.toString() }));
+    ws.send(JSON.stringify({
+      type: "serverList",
+      game: game,
+      name: servers[game].name,
+    }));
   }
 }
 
