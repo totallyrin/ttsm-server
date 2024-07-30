@@ -2,6 +2,7 @@
   "name": "ttsm-server",
   "version": "1.0.0",
   "dependencies": {
+    "ansi-parser": "^3.2.10",
     "discord.js": "^14.11.0",
     "node-os-utils": "^1.3.7",
     "node-pty": "^0.10.1",

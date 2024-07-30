@@ -5,6 +5,7 @@ const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 const servers = require("./serverconfig").servers;
 const logs = require("./server").logs;
 const clients = require("./server").clients;
+const AnsiParser = require("ansi-parser");
 
 /**
  * function to kill a given foreign game server
@@ -134,9 +135,9 @@ async function startServerPTY(ws, game) {
         }
         sendAll({
           type: "console",
-          data: log,
+          data: AnsiParser.removeAnsi(log),
         });
-        logs.add(log);
+        logs.add(AnsiParser.removeAnsi(log));
       }
     });
 
@@ -158,9 +159,9 @@ async function updateGame(ws, game) {
     console.log(log);
     sendAll({
       type: "console",
-      data: log,
+      data: AnsiParser.removeAnsi(log),
     });
-    logs.add(log);
+    logs.add(AnsiParser.removeAnsi(log));
   }
   // if server is not running,
   else {
@@ -192,9 +193,9 @@ async function updateGame(ws, game) {
         }
         sendAll({
           type: "console",
-          data: log,
+          data: AnsiParser.removeAnsi(log),
         });
-        logs.add(log);
+        logs.add(AnsiParser.removeAnsi(log));
       }
     });
 
@@ -203,9 +204,9 @@ async function updateGame(ws, game) {
       const log = `${servers[game].name} server: update exited with code ${data.exitCode}`;
       sendAll({
         type: "console",
-        data: log,
+        data: AnsiParser.removeAnsi(log),
       });
-      logs.add(log);
+      logs.add(AnsiParser.removeAnsi(log));
       updateStatus(ws, game, false);
     });
   }
