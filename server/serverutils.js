@@ -121,7 +121,7 @@ async function startServerPTY(ws, game) {
     servers[game].server.onData((data) => {
       if (typeof data !== "string") return;
       if (!data.includes("[K") && !data.includes("C:\\Users\\")) {
-        const log = `${servers[game].name} server: ${data.trim()}`;
+        const log = `${servers[game].name} server: ${data.trim()}`.replace("\n", "");
         if (data.includes(servers[game].online)) {
           console.log(`${game} server started`);
           updateStatus(ws, game, true);
@@ -184,7 +184,7 @@ async function updateGame(ws, game) {
     servers[game].server.onData((data) => {
       if (typeof data !== "string") return;
       if (!data.includes("[K")) {
-        const log = `${servers[game].name} server: ${data.trim()}`;
+        const log = `${servers[game].name} server: ${data.trim()}`.replace("\n", "");
         if (
           data.includes("Replace ..minecraftserver.jar with latest [Y,N]?") ||
           data.includes("Terminate batch job (Y/N)?")
