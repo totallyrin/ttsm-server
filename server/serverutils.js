@@ -177,7 +177,7 @@ async function updateGame(ws, game) {
       name: `${game}Update`,
       cwd: process.env.PWD,
       env: process.env,
-      cols: 1000,
+      cols: 4096,
     });
     process.chdir("..\\..");
 
