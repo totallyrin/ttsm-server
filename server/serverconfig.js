@@ -49,8 +49,8 @@ let redm = {
   config: "txData\\VORPCore\\server.cfg",
   args: [".\\start-server.bat"],
   stop: "quit\r",
-  online: "",
-  offline: "",
+  online: "Database server connection established",
+  offline: "Quit command executed",
 };
 
 let tekkit2 = {
